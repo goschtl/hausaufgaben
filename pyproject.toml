@@ -9,10 +9,12 @@ dependencies = [
     "requests>=2.32",
     # Muss aktuell bleiben: WhatsApp lehnt alte whatsmeow-Builds mit 405 ab.
     "neonize>=0.4.3",
+    "pydantic-ai-slim[openai]>=2.55",
 ]
 
 [project.scripts]
 hausaufgaben = "hausaufgaben.cli:main"
+vokabeln-sprechen = "hausaufgaben.sprechen:main"
 
 [build-system]
 requires = ["hatchling"]

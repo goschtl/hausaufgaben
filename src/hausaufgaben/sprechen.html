@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vokabeln sprechen</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* Gleiche Optik wie der Vokabel-Sprint: Papier, Tinte, Textmarker. Großer Mikrofon-Knopf als Mittelpunkt. */
+:root {
+  --paper: #f2f4f8; --card: #ffffff; --ink: #1b2440; --muted: #5b6583; --line: #d6dce9;
+  --pen: #2f55d4; --marker: #ffe14d; --on-marker: #1b2440;
+  --good: #1c8f5a; --good-bg: #dff3e8; --bad: #c93b33; --bad-bg: #fbe3e1; --rec: #e0413a;
+  --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #11162a; --card: #1a2140; --ink: #e8ecf7; --muted: #9ea7c4; --line: #2c3559;
+    --pen: #8aa4ff; --marker: #f2cf2e; --good: #45c98a; --good-bg: #173a2c; --bad: #f2716a; --bad-bg: #42201f; --rec: #ff5a52;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.5 var(--body); padding: 20px 16px 48px; }
+.wrap { max-width: 720px; margin: 0 auto; display: grid; gap: 18px; }
+h1, h2 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(1.9rem, 6vw, 2.6rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.02em; }
+h2 { font-size: 1.1rem; }
+.eyebrow { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
+.score { display: flex; gap: 18px; font-variant-numeric: tabular-nums; }
+.score div { display: grid; text-align: right; }
+.score b { font-family: var(--display); font-size: 1.6rem; line-height: 1; }
+.score span { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--pen); outline-offset: 2px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 12px; font-size: 0.9rem; font-weight: 700; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.stage { background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 22px clamp(16px, 4vw, 32px) 26px; display: grid; gap: 18px; min-height: 360px; align-content: start; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--pen); transition: width .3s; }
+.meta { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.hint { color: var(--muted); font-size: 0.9rem; }
+.word { font-family: var(--display); font-weight: 800; font-size: clamp(1.5rem, 5.5vw, 2.2rem); line-height: 1.2; overflow-wrap: anywhere; }
+.word mark { color: var(--on-marker); padding: 0 .15em; border-radius: 3px; background: linear-gradient(100deg, transparent 0 1%, var(--marker) 3% 96%, transparent 99%); box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.mic-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.mic { width: 96px; height: 96px; border-radius: 50%; border: 0; background: var(--pen); color: #fff; display: grid; place-items: center; flex: none; box-shadow: 0 4px 0 rgba(0,0,0,.15); }
+.mic svg { width: 40px; height: 40px; fill: currentColor; }
+.mic.on { background: var(--rec); animation: pulse 1.2s infinite; }
+.mic:disabled { opacity: .4; cursor: default; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rec) 50%, transparent); } 50% { box-shadow: 0 0 0 14px transparent; } }
+.live { font-size: 1.1rem; min-height: 1.6em; color: var(--muted); font-style: italic; }
+.btn { border: 0; border-radius: 10px; padding: 10px 18px; font-weight: 700; background: var(--ink); color: var(--paper); }
+.btn.go { background: var(--pen); color: #fff; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.feedback { border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; }
+.feedback.ok { background: var(--good-bg); }
+.feedback.no { background: var(--bad-bg); }
+.feedback b { color: var(--good); }
+.feedback.no b { color: var(--bad); }
+.result { display: grid; gap: 14px; }
+.big { font-family: var(--display); font-weight: 800; font-size: 3rem; line-height: 1; }
+.list { display: grid; gap: 4px; }
+.rec { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; border-bottom: 1px solid var(--line); padding-block: 8px; }
+.rec .w { min-width: 0; overflow-wrap: anywhere; }
+.rec small { color: var(--muted); display: block; }
+.rec audio { grid-column: 1 / -1; width: 100%; height: 36px; }
+.tag { font-size: 0.75rem; font-weight: 700; border-radius: 999px; padding: 2px 10px; }
+.tag.ok { background: var(--good-bg); color: var(--good); }
+.tag.no { background: var(--bad-bg); color: var(--bad); }
+.ki { border-radius: 10px; padding: 10px 14px; display: flex; gap: 10px; align-items: baseline; border: 1.5px solid var(--line); }
+.ki.ok { border-color: var(--good); }
+.ki.mid { border-color: var(--marker); }
+.ki.no { border-color: var(--bad); }
+.stars { color: var(--pen); letter-spacing: 1px; white-space: nowrap; }
+.rec .tipp { grid-column: 1 / -1; font-size: 0.9rem; }
+.warn { background: var(--bad-bg); border-radius: 10px; padding: 10px 14px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow" id="who">Englisch</div>
+      <h1>Vokabeln sprechen</h1>
+    </div>
+    <div class="score">
+      <div><b id="xp">0</b><span>Punkte</span></div>
+      <div><b id="streak">0</b><span>Serie</span></div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="chips" id="kids"></div>
+    <div class="chips" id="pages"></div>
+    <div class="chips" id="sets"></div>
+    <div class="chips">
+      <button class="chip" id="tab-play" aria-pressed="true">Üben</button>
+      <button class="chip" id="tab-recs" aria-pressed="false">Aufnahmen anhören</button>
+    </div>
+  </div>
+
+  <section class="stage" id="stage"><p>Lade Wortlisten …</p></section>
+</div>
+
+<script>
+const MIC = '<svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v7a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V22h2v-3.1A7 7 0 0 0 19 12h-2z"/></svg>';
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+let KI = false;
+const SETS = { wort: "Vokabeln", gegenteil: "Gegenteile & Reihen", familie: "Wortfamilien", wendung: "Wendungen", erklaerung: "Erklärungen" };
+const setOf = w => !w.art ? "wort" : w.art === "reihe" ? "gegenteil" : w.art;
+let sets = new Set(Object.keys(SETS));
+let LISTS = {}, kid = null, pages = new Set(), round = null, xp = 0, streak = 0, stream = null, tab = "play";
+const saved = (() => { try { return JSON.parse(localStorage.getItem("sprechen")) || {}; } catch { return {}; } })();
+const persist = () => { try { localStorage.setItem("sprechen", JSON.stringify({ kid, pages: [...pages], xp, sets: [...sets] })); } catch {} };
+
+// ---------- Vergleich: was erkannt wurde vs. was im Buch steht ----------
+function norm(s) {
+  return s.toLowerCase().replace(/[’`]/g, "'")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\b(sth|sb)\.|\b(something|somebody|someone)\b/g, " ")
+    .replace(/[-–\/]/g, " ").replace(/[^a-z0-9' ]/g, " ")
+    .replace(/^\s*(to|the|a|an)\s+/, " ")
+    .replace(/\s+/g, " ").trim();
+}
+function targets(en) {
+  const out = new Set([norm(en)]);
+  for (const m of en.matchAll(/\([^)]*(?:auch|kurz):\s*([^)]+)\)/g)) out.add(norm(m[1]));   // „exam“, „call“
+  const slash = en.match(/(\w+)\/(\w+)/);                                                   // „be/feel homesick“
+  if (slash) for (const alt of [slash[1], slash[2]]) out.add(norm(en.replace(slash[0], alt)));
+  const head = norm(en.split(",")[0]);                                                      // „show, showed, shown“
+  if (head.length >= 2) out.add(head);
+  out.delete("");
+  return out;
+}
+function dist(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+function matches(heard, en) {
+  const h = norm(heard), hs = h.replace(/ /g, "");
+  if (!h) return false;
+  for (const t of targets(en)) {
+    const ts = t.replace(/ /g, "");
+    if (h === t || hs === ts) return true;
+    if (ts.length >= 5 && dist(hs, ts) <= 1) return true;          // defense/defence, kleine Hörfehler
+    if (t.length >= 4 && (" " + h + " ").includes(" " + t + " ")) return true;  // „it's a choir“
+  }
+  return false;
+}
+
+// ---------- Ton ----------
+function speak(en) {
+  try {
+    const u = new SpeechSynthesisUtterance(en.replace(/\([^)]*\)/g, "").replace(/\b(sth|sb)\./g, "something").split(",")[0].replace("/", " or ").trim());
+    u.lang = "en-GB"; u.rate = 0.9; speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch {}
+}
+async function micStream() {
+  if (!stream) stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  return stream;
+}
+function recorderType() {
+  for (const t of ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"]) if (window.MediaRecorder?.isTypeSupported?.(t)) return t;
+  return "";
+}
+
+// ---------- Runde ----------
+function pool() {
+  const lists = LISTS[kid] || {};
+  return [...pages].flatMap(p => (lists[p] || []).map(w => ({ ...w, page: p }))).filter(w => sets.has(setOf(w)));
+}
+function newRound() {
+  const q = shuffle(pool()).slice(0, 10);
+  round = { q, total: q.length, first: 0, missed: [], tried: new Set() };
+  next();
+}
+function bar() {
+  const done = round.total - round.q.length;
+  return `<div class="meta"><span>${done} von ${round.total} geschafft</span><span>${round.first} beim ersten Versuch</span></div>
+    <div class="bar"><i style="width:${(done / round.total) * 100}%"></i></div>`;
+}
+function next() {
+  if (!round.q.length) return finish();
+  show(round.q.shift());
+}
+
+function show(w) {
+  $("#stage").innerHTML = bar() + `
+    <div class="hint">${w.art ? SETS[setOf(w)] + " – sag die Antwort auf Englisch:" : "Sag das englische Wort laut:"}</div>
+    <div class="word"><mark>${esc(w.de)}</mark></div>
+    <div class="mic-row">
+      <button class="mic" id="mic" aria-label="Sprechen">${MIC}</button>
+      <div class="live" id="live">${Recognition ? "Tippe aufs Mikrofon und sprich." : "Tippe aufs Mikrofon, sprich, und tippe nochmal zum Beenden."}</div>
+    </div>
+    <div id="after"></div>
+    <div class="row"><button class="btn ghost" id="skip">Weiß ich nicht</button></div>`;
+  $("#mic").onclick = () => listen(w);
+  $("#skip").onclick = () => { stopAll(); judge(w, null, [], false); };
+}
+
+let active = null;  // {recognition, recorder}
+function stopAll() {
+  if (!active) return;
+  try { active.recognition?.abort(); } catch {}
+  try { active.recorder.state !== "inactive" && active.recorder.stop(); } catch {}
+}
+
+async function listen(w) {
+  if (active) { active.recognition ? active.recognition.stop() : active.recorder.stop(); return; }
+  let s;
+  try { s = await micStream(); }
+  catch { $("#live").innerHTML = `<span class="warn">Kein Mikrofon-Zugriff. Bitte im Browser oben in der Adressleiste das Mikrofon erlauben.</span>`; return; }
+  const type = recorderType();
+  const recorder = new MediaRecorder(s, type ? { mimeType: type } : undefined);
+  const chunks = [];
+  let heard = [], gotBlob;
+  const blobReady = new Promise(r => gotBlob = r);
+  recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+  recorder.onstop = () => gotBlob(new Blob(chunks, { type: recorder.mimeType || type || "audio/webm" }));
+  recorder.start();
+  const mic = $("#mic");
+  mic.classList.add("on");
+  $("#live").textContent = "Ich höre zu …";
+  $("#skip").hidden = true;
+  active = { recorder };
+
+  const done = async () => {
+    await new Promise(r => setTimeout(r, 250));  // Wortende nicht abschneiden
+    if (recorder.state !== "inactive") recorder.stop();
+    const blob = await blobReady;
+    active = null;
+    if (!document.body.contains(mic)) return;  // inzwischen Tab/Seite gewechselt
+    mic.classList.remove("on");
+    if (Recognition) {
+      if (!heard.length) { $("#live").textContent = "Ich habe nichts verstanden. Tippe nochmal aufs Mikrofon."; $("#skip").hidden = false; return; }
+      judge(w, blob, heard, heard.some(h => matches(h, w.en)));
+    } else {
+      selfCheck(w, blob);
+    }
+  };
+
+  if (Recognition) {
+    const rec = new Recognition();
+    rec.lang = "en-GB"; rec.interimResults = true; rec.maxAlternatives = 5; rec.continuous = false;
+    rec.onresult = e => {
+      const res = e.results[e.results.length - 1];
+      $("#live").textContent = "„" + res[0].transcript + "“";
+      if (res.isFinal) heard = [...res].map(a => a.transcript);
+    };
+    rec.onerror = e => { if (e.error === "not-allowed") $("#live").textContent = "Spracherkennung nicht erlaubt."; };
+    rec.onend = done;
+    active.recognition = rec;
+    rec.start();
+  } else {
+    recorder.addEventListener("stop", done, { once: true });
+    setTimeout(() => recorder.state !== "inactive" && recorder.stop(), 6000);
+  }
+}
+
+// Aufnahme sofort speichern; liefert den Dateinamen (oder null).
+async function upload(w, blob, heard, ok) {
+  if (!blob) return null;
+  const q = new URLSearchParams({ kind: kid, seite: w.page, en: w.en, de: w.de, gehoert: heard.join(" | "), ok: ok ? "1" : "0" });
+  try {
+    const r = await fetch("/aufnahme?" + q, { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+    return (await r.json()).datei;
+  } catch {
+    $("#ki") && ($("#ki").textContent = "Aufnahme konnte nicht gespeichert werden – läuft der Server noch?");
+    return null;
+  }
+}
+const verdict = (datei, ok) => datei && fetch(`/urteil?datei=${encodeURIComponent(datei)}&ok=${ok ? 1 : 0}`, { method: "POST" }).catch(() => {});
+
+// KI hört sich die Aufnahme an und gibt einen Aussprache-Tipp.
+async function rate(datei, box) {
+  if (!KI || !datei || !box) return;
+  box.hidden = false;
+  box.innerHTML = `<span class="hint">Die KI hört sich deine Aussprache an …</span>`;
+  try {
+    const r = await fetch(`/bewerten?datei=${encodeURIComponent(datei)}`, { method: "POST" });
+    const k = await r.json();
+    if (!document.body.contains(box)) return;
+    if (k.fehler) { box.innerHTML = `<span class="hint">${esc(k.fehler)}</span>`; return; }
+    box.className = "ki " + (k.note === 3 ? "ok" : k.note === 2 ? "mid" : "no");
+    box.innerHTML = `<span class="stars" aria-label="${k.note} von 3">${"★".repeat(k.note)}${"☆".repeat(3 - k.note)}</span>
+      <span><b>Aussprache:</b> ${esc(k.tipp)}</span>`;
+  } catch { box.innerHTML = `<span class="hint">Die KI-Bewertung hat gerade nicht geklappt.</span>`; }
+}
+
+// Ohne Spracherkennung (z. B. Firefox): anhören und selbst entscheiden.
+async function selfCheck(w, blob) {
+  const url = URL.createObjectURL(blob);
+  $("#after").innerHTML = `<div class="feedback"><div>Richtig wäre: <strong>${esc(w.en)}</strong></div>
+    <audio controls src="${url}"></audio></div><div class="ki" id="ki" hidden></div>
+    <div class="row" style="margin-top:10px"><button class="btn go" id="yes">Hab ich richtig gesagt</button><button class="btn ghost" id="no">Falsch</button></div>`;
+  speak(w.en);
+  const datei = upload(w, blob, ["(selbst bewertet)"], false);
+  datei.then(d => rate(d, $("#ki")));
+  $("#yes").onclick = async () => { verdict(await datei, true); score(w, true); next(); };
+  $("#no").onclick = () => { score(w, false); requeue(w); next(); };
+}
+
+function judge(w, blob, heard, ok) {
+  if ($("#mic")) $("#mic").disabled = true;
+  const said = heard.length ? `Verstanden: „${esc(heard[0])}“` : "Übersprungen";
+  const own = blob ? `<audio controls src="${URL.createObjectURL(blob)}"></audio>` : "";
+  const datei = upload(w, blob, heard, ok);
+  score(w, ok);
+  if (ok) {
+    $("#after").innerHTML = `<div class="feedback ok"><b>Richtig!</b><span>${said}</span>${own}</div>
+      <div class="ki" id="ki" hidden></div>
+      <div class="row" style="margin-top:10px"><button class="btn go" id="go">Weiter</button></div>`;
+    $("#go").onclick = next;
+    $("#go").focus();
+  } else {
+    $("#after").innerHTML = `<div class="feedback no"><b>${heard.length ? "Noch nicht." : "Kein Problem."}</b><span>${said}</span>
+      <span>Richtig: <strong>${esc(w.en)}</strong></span>${own}</div>
+      <div class="ki" id="ki" hidden></div>
+      <div class="row" style="margin-top:10px">
+        ${heard.length ? `<button class="btn go" id="again">Nochmal sprechen</button>` : ""}
+        <button class="btn ghost" id="go">Weiter</button>
+        ${heard.length ? `<button class="btn ghost" id="override">Ich hab's richtig gesagt</button>` : ""}
+      </div>`;
+    speak(w.en);
+    $("#go").onclick = () => { requeue(w); next(); };
+    if (heard.length) {
+      $("#again").onclick = () => show(w);
+      $("#override").onclick = async () => { verdict(await datei, true); score(w, true, true); next(); };
+    }
+  }
+  datei.then(d => rate(d, $("#ki")));
+}
+
+function requeue(w) {
+  if (!round.q.includes(w)) round.q.splice(Math.min(3, round.q.length), 0, w);
+}
+
+// Punkte zählen; „fix“ = nachträglich doch richtig, zählt dann wie beim ersten Versuch.
+function score(w, ok, fix = false) {
+  const first = !round.tried.has(w.en);
+  round.tried.add(w.en);
+  if (ok && (first || fix)) {
+    round.first++; streak++; xp += 10 + Math.min(streak - 1, 10);
+    round.missed = round.missed.filter(m => m !== w);
+  }
+  if (!ok) { streak = 0; if (!round.missed.includes(w)) round.missed.push(w); }
+  $("#xp").textContent = xp; $("#streak").textContent = streak; persist();
+}
+
+function finish() {
+  $("#stage").innerHTML = `<div class="result">
+    <div class="eyebrow">Runde fertig</div>
+    <div class="big">${round.first}/${round.total}</div>
+    <div>${round.first === round.total ? "Alles beim ersten Mal richtig gesagt!" : "Gut geübt!"}</div>
+    ${round.missed.length ? `<div><h2>Diese nochmal üben</h2><div class="list">${round.missed.map(w => `<div class="rec"><span class="w"><strong>${esc(w.en)}</strong><small>${esc(w.de)}</small></span><button class="btn ghost" data-say="${esc(w.en)}">Anhören</button></div>`).join("")}</div></div>` : ""}
+    <div class="row"><button class="btn go" id="again">Neue Runde</button></div></div>`;
+  document.querySelectorAll("[data-say]").forEach(b => b.onclick = () => speak(b.dataset.say));
+  $("#again").onclick = newRound;
+}
+
+// ---------- Aufnahmen ----------
+let onlyWrong = false;
+async function showRecs() {
+  const recs = await fetch("/aufnahmen.json").then(r => r.json()).catch(() => []);
+  const list = recs.filter(r => !onlyWrong || !r.richtig);
+  let day = "";
+  const rows = list.map(r => {
+    const d = r.datei.split("/")[0];
+    const head = d !== day ? `<h2 style="margin-top:12px">${new Date(d + "T12:00").toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}</h2>` : "";
+    day = d;
+    const time = (r.zeit || "").slice(11, 16);
+    return head + `<div class="rec"><span class="w"><strong>${esc(r.en || "?")}</strong> · ${esc(r.de || "")}
+        <small>${esc(r.kind || "")} ${time} · gehört: ${esc(r.gehoert || "–")}</small></span>
+        <span class="tag ${r.richtig ? "ok" : "no"}">${r.richtig ? "richtig" : "falsch"}</span>
+        ${r.ki ? `<span class="tipp">${"★".repeat(r.ki.note)}${"☆".repeat(3 - r.ki.note)} ${esc(r.ki.tipp)}</span>` : ""}
+        <audio controls preload="none" src="/aufnahmen/${r.datei.split("/").map(encodeURIComponent).join("/")}"></audio></div>`;
+  }).join("");
+  $("#stage").innerHTML = `<div class="row" style="justify-content:space-between"><h2>${list.length} Aufnahmen</h2>
+      <button class="chip" id="wrong" aria-pressed="${onlyWrong}">Nur falsche</button></div>
+    <div class="list">${rows || `<p class="hint">Noch keine Aufnahmen. Jeder Versuch im Üben-Modus landet hier.</p>`}</div>`;
+  $("#wrong").onclick = () => { onlyWrong = !onlyWrong; showRecs(); };
+}
+
+// ---------- Oberfläche ----------
+function paintChips() {
+  $("#kids").innerHTML = Object.keys(LISTS).map(k => `<button class="chip" data-kid="${esc(k)}" aria-pressed="${k === kid}">${esc(k)}</button>`).join("");
+  $("#pages").innerHTML = Object.keys(LISTS[kid] || {}).map(p => `<button class="chip" data-page="${p}" aria-pressed="${pages.has(p)}">S. ${p}</button>`).join("");
+  const have = new Set(Object.values(LISTS[kid] || {}).flat().map(setOf));
+  $("#sets").innerHTML = Object.entries(SETS).filter(([k]) => have.has(k)).map(([k, label]) => `<button class="chip" data-set="${k}" aria-pressed="${sets.has(k)}">${label}</button>`).join("");
+  document.querySelectorAll("[data-set]").forEach(b => b.onclick = () => {
+    const k = b.dataset.set;
+    sets.has(k) ? sets.delete(k) : sets.add(k);
+    if (!sets.size) sets.add(k);
+    persist(); paintChips(); if (tab === "play") newRound();
+  });
+  document.querySelectorAll("[data-kid]").forEach(b => b.onclick = () => selectKid(b.dataset.kid));
+  document.querySelectorAll("[data-page]").forEach(b => b.onclick = () => {
+    const p = b.dataset.page;
+    pages.has(p) ? pages.delete(p) : pages.add(p);
+    if (!pages.size) pages.add(p);
+    persist(); paintChips(); if (tab === "play") newRound();
+  });
+  $("#who").textContent = kid ? `${kid} · Englisch` : "Englisch";
+}
+function selectKid(k) {
+  stopAll();
+  kid = k;
+  const all = Object.keys(LISTS[k]);
+  const keep = (saved.kid === k ? saved.pages || [] : []).filter(p => all.includes(p));
+  pages = new Set(keep.length ? keep : all.slice(-2));   // Standard: die neuesten zwei Seiten
+  saved.pages = null;
+  persist(); paintChips(); if (tab === "play") newRound();
+}
+function setTab(t) {
+  stopAll();
+  tab = t;
+  $("#tab-play").setAttribute("aria-pressed", String(t === "play"));
+  $("#tab-recs").setAttribute("aria-pressed", String(t === "recs"));
+  t === "play" ? newRound() : showRecs();
+}
+$("#tab-play").onclick = () => setTab("play");
+$("#tab-recs").onclick = () => setTab("recs");
+
+(async () => {
+  LISTS = await fetch("/vokabeln.json").then(r => r.json());
+  KI = await fetch("/status.json").then(r => r.json()).then(s => s.ki).catch(() => false);
+  xp = saved.xp || 0; $("#xp").textContent = xp;
+  if (saved.sets?.length) sets = new Set(saved.sets.filter(s => s in SETS));
+  const kids = Object.keys(LISTS);
+  if (!kids.length) { $("#stage").innerHTML = "<p>Keine Wortlisten gefunden.</p>"; return; }
+  selectKid(kids.includes(saved.kid) ? saved.kid : kids[0]);
+  if (!Recognition) $("#stage").insertAdjacentHTML("afterbegin", `<div class="warn">Dieser Browser hat keine Spracherkennung. Aufnehmen geht trotzdem, bewerten musst du selbst. Mit Chrome oder Safari klappt die automatische Prüfung.</div>`);
+})();
+</script>
+</body>
+</html>

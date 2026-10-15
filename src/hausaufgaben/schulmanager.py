@@ -123,6 +123,12 @@ class Schulmanager:
             return []
         return data or []
 
+    def lessons(self, student_id: int, start: str, end: str) -> list[dict[str, Any]]:
+        """Tatsächliche Stunden (inkl. Vertretungen) zwischen start und end (ISO-Daten)."""
+        data = self.call("schedules", "get-actual-lessons",
+                         {"student": {"id": student_id}, "start": start, "end": end})
+        return data if isinstance(data, list) else []
+
     # -------------------------------------------------------------- interna
 
     def _post(self, path: str, body: dict[str, Any]) -> Any:
